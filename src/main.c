@@ -1,5 +1,9 @@
 #include <at89x52.h>
 #include "lcd1602.h"
+#include <compiler.h>
+//typedef unsigned int uint;
+typedef unsigned char uchar;
+
 
 /* 
 +--------+------+------+-----------+
@@ -8,15 +12,13 @@
 |   0x80 | 0x90 | 0xA0 | 0xB0      |
 +--------+------+------+-----------+
 */
-__sfr __at 0x80 LED;
-__sfr __at 0x90 NUM;
-__sbit __at 0x80 LED1;
 
 enum count_num{
     TIMER_1S = 200,
 
 };
 
+//#define sdcc
 #define GDO(count, val, func) do\
             {\
                 if(++count > val){\
@@ -25,57 +27,75 @@ enum count_num{
                 }\
         }while(0)
 
+SBIT(Tr, 0xa0 , 2);
+SBIT(Ec, 0xb0, 3);
+SBIT(LED, 0x80, 0);
 
-#define TIMES (5000)
+int L = 0;
+int tmp;
 
-#define TH0_0 ((8192 - TIMES) >> 8 )
-#define TL0_0 (8192 - TIMES)
+void ultInit()
+{
+    TMOD = 0x01;           //设T0为方式1；
+    TH0 = 0;
+    TL0 = 0; 
+    TR0 = 1;  
+    ET0 = 1;               //允许T0中断
+    EA = 1;                //开启总中断
+    Tr = 0;
+}
 
-int count = 0;
-int wait = 0;
-void interrupt1(void)  __interrupt(1);
+void ultStart()
+{
+    char i;
+    Tr = 1;
+    for ( i = 0; i < 45; i++ ) {
+        ;
+    }
+    Tr = 0; 
+}
 
-void blink_led(void);
-void null_func(void);
+void count()
+{
+    uint time = 0;
 
+    while(!Ec);                //等待高电平
+    TR0 = 1;                   //打开计时器
+    while(Ec);                 //等待低电平
+    TR0 = 0;                   //关闭计时器
+
+    time = TH0*256 + TL0;      //计算时间
+    //L = 0.18446*time;
+    L = 1 *time;
+
+    TH0 = 0;                   //重置计时器
+    TL0 = 0;
+}
+
+void show()
+{
+    LcdShowNum(1, 2, L);
+}
 
 void main(void)
 {
+    InitLcd1602();
+    ultInit();
+    LED = 0;
+    tmp = TMOD;
+    LcdShowStr(0, 0, "51 distancer");
+    LcdShowNum(1, 1, tmp);
 
-    InitLcd1602(); 
-
-    TMOD = 0x00;
-    ET0 = 1;
-    TR0 = 1;
-    TL0 = TL0_0;
-    TH0 = TH0_0;
-    EA = 1;
-
-	P0 = 0x81;
-
-    ShowStr("hello World!");
-    LcdShowNum(1, 1, 123);
-	for (;;) {
-	}
-
-}
-
-void interrupt1(void) __interrupt(1)
-{
-
-    TL0 = TL0_0;
-    TH0 = TH0_0;
-
-    GDO(count, TIMER_1S, null_func);
-	GDO(wait, 100, blink_led);
-}
-void blink_led(void)
-{
-    P1 = ~P1;
-}
-    
-
-void null_func(void)
-{
+    for(;;){
+        int j;
+        for ( j  = 0 ; j  < 9999; j ++ ) {
+            ;
+        }
+        ultStart();
+        count();
+        LcdShowStr(0, 0, "--");
+        show();
+    }
 
 }
+
