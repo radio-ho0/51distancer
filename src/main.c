@@ -27,7 +27,7 @@ enum count_num{
                 }\
         }while(0)
 
-SBIT(Tr, 0xa0 , 2);
+SBIT(Tr, 0xb0 , 2);
 SBIT(Ec, 0xb0, 3);
 SBIT(LED, 0x80, 0);
 
@@ -66,8 +66,8 @@ void count()
 
     time = TH0*256 + TL0;      //计算时间
     //L = 0.18446*time;
-    L = 1 *time;
-
+    //L = 1 *time;
+    L = time;
     TH0 = 0;                   //重置计时器
     TL0 = 0;
 }
