@@ -36,7 +36,8 @@ int tmp;
 
 void ultInit()
 {
-    TMOD = 0x01;           //设T0为方式1；
+    TMOD &= 0xf0;
+    TMOD |= 0x01;           //设T0为方式1；
     TH0 = 0;
     TL0 = 0; 
     TR0 = 1;  
@@ -57,7 +58,7 @@ void ultStart()
 
 void count()
 {
-    uint time = 0;
+    float time = 0;
 
     while(!Ec);                //等待高电平
     TR0 = 1;                   //打开计时器
@@ -67,7 +68,8 @@ void count()
     time = TH0*256 + TL0;      //计算时间
     //L = 0.18446*time;
     //L = 1 *time;
-    L = time;
+    //L = (time * 2 ) / 9;
+    L = time * 0.18446;
     TH0 = 0;                   //重置计时器
     TL0 = 0;
 }
@@ -93,7 +95,7 @@ void main(void)
         }
         ultStart();
         count();
-        LcdShowStr(0, 0, "--");
+        LcdShowStr(0, 0, "wav running!");
         show();
     }
 
